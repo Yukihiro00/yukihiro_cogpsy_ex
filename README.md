@@ -12,11 +12,12 @@ yukihihiro's psychological experiments reserve
 
 <body>
 <main>
-  <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdKHyz1xhSkSybhHRH6R0lczGu7KsQxbqOi6U65hirwnVzWtQ/viewform?embedded=true" width="640" height="1848" frameborder="0" marginheight="0" marginwidth="0">読み込んでいます...</iframe>
+ 
 </main>
 
 <script>
-console.log('GitHub Pages Sample');
+console.log('GitHub Pages Sample'); 
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdKHyz1xhSkSybhHRH6R0lczGu7KsQxbqOi6U65hirwnVzWtQ/viewform?embedded=true" width="640" height="1848" frameborder="0" marginheight="0" marginwidth="0">読み込んでいます...</iframe>
 </script>
 </body>
 </html>
