@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>IGT Demo</title>
 
@@ -30,8 +29,7 @@ body{
 }
 
 #trial{
-    margin-top:10px;
-    margin-bottom:20px;
+    margin:15px 0;
 }
 
 #feedback{
@@ -44,7 +42,6 @@ button:disabled{
 }
 </style>
 </head>
-
 <body>
 
 <h1>アイオワギャンブル課題</h1>
@@ -55,10 +52,10 @@ button:disabled{
 <div id="start-screen">
 
     <p>
-        準備ができたら開始ボタンを押してください
+        準備ができたら開始を押してください
     </p>
 
-    <button onclick="startTask()">
+    <button id="startBtn">
         開始
     </button>
 
@@ -76,25 +73,10 @@ button:disabled{
 
     <div>
 
-        <button class="deck"
-                onclick="chooseDeck('A')">
-            A
-        </button>
-
-        <button class="deck"
-                onclick="chooseDeck('B')">
-            B
-        </button>
-
-        <button class="deck"
-                onclick="chooseDeck('C')">
-            C
-        </button>
-
-        <button class="deck"
-                onclick="chooseDeck('D')">
-            D
-        </button>
+        <button class="deck" data-deck="A">A</button>
+        <button class="deck" data-deck="B">B</button>
+        <button class="deck" data-deck="C">C</button>
+        <button class="deck" data-deck="D">D</button>
 
     </div>
 
@@ -107,7 +89,7 @@ button:disabled{
 <script>
 
 const GAS_URL =
-"https://script.google.com/macros/s/AKfycbw0Yx17M1dc4oVUQ9_WldRK-U5rnKPD8ehiAVNheeYxpUGOn_xtqoe7lgnOyXj2m5DxIQ/exec";
+"https://script.google.com/macros/s/AKfycbxNVuetcFGWeDmsnZtvx-1NoUNm54TZ9LZDV3BOfIgr5isWKVURVXUXpy6DDVMTnxB_xQ/exec";
 
 const MAX_TRIALS = 100;
 
@@ -126,16 +108,6 @@ const counts = {
     C:0,
     D:0
 };
-
-/*
-期待値
-
-A = -25
-B = -22.5
-
-C = +25
-D = +22.5
-*/
 
 const decks = {
 
@@ -169,6 +141,24 @@ const decks = {
 
 };
 
+document
+.getElementById("startBtn")
+.addEventListener("click", startTask);
+
+document
+.querySelectorAll(".deck")
+.forEach(btn => {
+
+    btn.addEventListener("click", () => {
+
+        chooseDeck(
+            btn.dataset.deck
+        );
+
+    });
+
+});
+
 function startTask(){
 
     participantId =
@@ -188,15 +178,11 @@ function startTask(){
 
 function sampleOutcome(deckName){
 
-    const deck =
-        decks[deckName];
-
-    const r =
-        Math.random();
+    const r = Math.random();
 
     let cumulative = 0;
 
-    for(const outcome of deck.outcomes){
+    for(const outcome of decks[deckName].outcomes){
 
         cumulative += outcome.p;
 
@@ -208,9 +194,11 @@ function sampleOutcome(deckName){
 
     }
 
-    return deck.outcomes[
-        deck.outcomes.length - 1
-    ].value;
+    return decks[deckName]
+        .outcomes[
+          decks[deckName]
+          .outcomes.length - 1
+        ].value;
 }
 
 function chooseDeck(deckName){
@@ -246,40 +234,21 @@ function chooseDeck(deckName){
         .textContent =
         `試行: ${trial} / ${MAX_TRIALS}`;
 
-    const sign =
-        outcome >= 0
-        ? "+"
-        : "";
-
     document
         .getElementById("feedback")
         .innerHTML =
         `
         <p>選択: ${deckName}</p>
-
-        <p>
-            結果:
-            ${sign}${outcome}
-        </p>
-
-        <p>
-            反応時間:
-            ${rt} ms
-        </p>
+        <p>結果: ${outcome > 0 ? "+" : ""}${outcome}</p>
+        <p>RT: ${rt} ms</p>
         `;
 
     results.push({
 
-        participantId,
-
         trial,
-
-        deck:deckName,
-
+        deck: deckName,
         outcome,
-
         balance,
-
         rt,
 
         timestamp:
@@ -301,38 +270,46 @@ function chooseDeck(deckName){
 async function finishTask(){
 
     document
-        .querySelectorAll(".deck")
-        .forEach(
-            btn =>
-            btn.disabled = true
-        );
+      .querySelectorAll(".deck")
+      .forEach(
+        b => b.disabled = true
+      );
 
     document
-        .getElementById("feedback")
-        .innerHTML =
-        "<h2>データ送信中...</h2>";
+      .getElementById("feedback")
+      .innerHTML =
+      "<h2>送信中...</h2>";
+
+    const payload = {
+
+        participantId,
+
+        data: results
+
+    };
 
     try{
 
-        await fetch(
-            GAS_URL,
-            {
-                method:"POST",
+        const response =
+            await fetch(
+                GAS_URL,
+                {
+                    method: "POST",
 
-                headers:{
-                    "Content-Type":
-                    "application/json"
-                },
+                    body:
+                      new URLSearchParams({
+                        data:
+                        JSON.stringify(
+                          payload
+                        )
+                      })
+                }
+            );
 
-                body:JSON.stringify({
+        const text =
+            await response.text();
 
-                    participantId,
-
-                    data:results
-
-                })
-            }
-        );
+        console.log(text);
 
         const netScore =
             (counts.C + counts.D)
@@ -340,47 +317,45 @@ async function finishTask(){
             (counts.A + counts.B);
 
         document
-            .getElementById("feedback")
-            .innerHTML =
-            `
-            <h2>
-                実験終了
-            </h2>
+          .getElementById("feedback")
+          .innerHTML =
+          `
+          <h2>実験終了</h2>
 
-            <p>
-                参加者ID<br>
-                ${participantId}
-            </p>
+          <p>
+          Participant ID:<br>
+          ${participantId}
+          </p>
 
-            <p>
-                最終所持金:
-                ${balance}
-            </p>
+          <p>
+          最終所持金:
+          ${balance}
+          </p>
 
-            <p>
-                Net Score:
-                ${netScore}
-            </p>
+          <p>
+          Net Score:
+          ${netScore}
+          </p>
 
-            <p>
-                データ送信完了
-            </p>
-            `;
+          <p>
+          データ送信完了
+          </p>
+          `;
 
     }catch(err){
 
-        document
-            .getElementById("feedback")
-            .innerHTML =
-            `
-            <h2>
-                保存エラー
-            </h2>
+        console.error(err);
 
-            <pre>
+        document
+          .getElementById("feedback")
+          .innerHTML =
+          `
+          <h2>送信エラー</h2>
+
+          <pre>
 ${err}
-            </pre>
-            `;
+          </pre>
+          `;
     }
 }
 
