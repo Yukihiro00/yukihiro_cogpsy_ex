@@ -2,7 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>IGT Demo</title>
 
 <style>
@@ -14,25 +16,6 @@ body{
     padding:20px;
 }
 
-h1{
-    margin-bottom:30px;
-}
-
-#balance{
-    font-size:1.5rem;
-    font-weight:bold;
-    margin-bottom:10px;
-}
-
-#trial{
-    font-size:1.2rem;
-    margin-bottom:30px;
-}
-
-.deck-container{
-    margin:30px 0;
-}
-
 .deck{
     width:140px;
     height:180px;
@@ -41,288 +24,366 @@ h1{
     cursor:pointer;
 }
 
+#balance{
+    font-size:1.5rem;
+    font-weight:bold;
+}
+
+#trial{
+    margin-top:10px;
+    margin-bottom:20px;
+}
+
 #feedback{
-    min-height:100px;
-    margin-top:30px;
-    font-size:1.2rem;
-}
-
-button:disabled{
-    opacity:0.4;
-    cursor:not-allowed;
-}
-
-#summary{
     margin-top:20px;
+    min-height:80px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>アイオワギャンブル課題（デモ）<br></h1>
-    <p>本課題では、４つのデッキから好きな1つを選んでもらいます。<br>
-　　　選んだデッキによって報酬か罰金が得られます。<br>
-　　　選択を100回繰り返します。できるだけ所持金が多く得られるようにデッキを選んでみてください。</p>
+<h1>アイオワギャンブル課題</h1>
 
-<div id="balance">
+<div id="start-screen">
+
+    <p>参加者IDを入力してください</p>
+
+    <input
+      id="participant-id"
+      type="text"
+      placeholder="例: P001">
+
+    <br><br>
+
+    <button onclick="startTask()">
+      開始
+    </button>
+
+</div>
+
+<div id="experiment"
+     style="display:none;">
+
+  <div id="balance">
     所持金: 2000
-</div>
+  </div>
 
-<div id="trial">
+  <div id="trial">
     試行: 0 / 100
+  </div>
+
+  <div>
+
+      <button class="deck"
+              onclick="chooseDeck('A')">
+          A
+      </button>
+
+      <button class="deck"
+              onclick="chooseDeck('B')">
+          B
+      </button>
+
+      <button class="deck"
+              onclick="chooseDeck('C')">
+          C
+      </button>
+
+      <button class="deck"
+              onclick="chooseDeck('D')">
+          D
+      </button>
+
+  </div>
+
+  <div id="feedback">
+  </div>
+
 </div>
-
-<div class="deck-container">
-
-    <button class="deck" onclick="chooseDeck('A')">
-        A
-    </button>
-
-    <button class="deck" onclick="chooseDeck('B')">
-        B
-    </button>
-
-    <button class="deck" onclick="chooseDeck('C')">
-        C
-    </button>
-
-    <button class="deck" onclick="chooseDeck('D')">
-        D
-    </button>
-
-</div>
-
-<div id="feedback">
-    デッキを選択してください
-</div>
-
-<div id="summary"></div>
 
 <script>
 
+const GAS_URL =
+"https://script.google.com/macros/s/XXXXX/exec";
+
 const MAX_TRIALS = 100;
 
+let participantId = "";
+
 let balance = 2000;
+
 let trial = 0;
-let trialStart = performance.now();
+
+let trialStart;
 
 const results = [];
 
-const selectionCounts = {
-    A:0,
-    B:0,
-    C:0,
-    D:0
+const counts = {
+  A:0,
+  B:0,
+  C:0,
+  D:0
 };
-
-/*
-期待値
-
-A = -25
-B = -22.5
-
-C = +25
-D = +22.5
-*/
 
 const decks = {
 
-    A:{
-        outcomes:[
-            {value:100, p:0.5},
-            {value:-250, p:0.5}
-        ]
-    },
+  A:{
+    outcomes:[
+      {value:100,p:0.5},
+      {value:-150,p:0.5}
+    ]
+  },
 
-    B:{
-        outcomes:[
-            {value:100, p:0.9},
-            {value:-1250, p:0.1}
-        ]
-    },
+  B:{
+    outcomes:[
+      {value:100,p:0.9},
+      {value:-1125,p:0.1}
+    ]
+  },
 
-    C:{
-        outcomes:[
-            {value:50, p:0.5},
-            {value:0, p:0.5}
-        ]
-    },
+  C:{
+    outcomes:[
+      {value:50,p:0.5},
+      {value:0,p:0.5}
+    ]
+  },
 
-    D:{
-        outcomes:[
-            {value:50, p:0.9},
-            {value:-250, p:0.1}
-        ]
-    }
+  D:{
+    outcomes:[
+      {value:50,p:0.9},
+      {value:-225,p:0.1}
+    ]
+  }
 
 };
 
-function sampleOutcome(deckName){
+function startTask(){
 
-    const deck = decks[deckName];
+  participantId =
+    document
+      .getElementById(
+        "participant-id"
+      )
+      .value
+      .trim();
 
-    const r = Math.random();
+  if(!participantId){
 
-    let cumulative = 0;
-
-    for(const outcome of deck.outcomes){
-
-        cumulative += outcome.p;
-
-        if(r <= cumulative){
-            return outcome.value;
-        }
-    }
-
-    return deck.outcomes[
-        deck.outcomes.length - 1
-    ].value;
-}
-
-function chooseDeck(deckName){
-
-    if(trial >= MAX_TRIALS){
-        return;
-    }
-
-    const rt = Math.round(
-        performance.now() - trialStart
+    alert(
+      "参加者IDを入力してください"
     );
 
-    const outcome =
-        sampleOutcome(deckName);
+    return;
+  }
 
-    trial++;
+  document
+    .getElementById(
+      "start-screen"
+    )
+    .style.display = "none";
 
-    selectionCounts[deckName]++;
+  document
+    .getElementById(
+      "experiment"
+    )
+    .style.display = "block";
 
-    balance += outcome;
-
-    document.getElementById("balance").textContent =
-        `所持金: ${balance}`;
-
-    document.getElementById("trial").textContent =
-        `試行: ${trial} / ${MAX_TRIALS}`;
-
-    const sign =
-        outcome > 0 ? "+" : "";
-
-    document.getElementById("feedback").innerHTML =
-        `
-        <strong>選択:</strong> ${deckName}<br>
-        <strong>結果:</strong> ${sign}${outcome}<br>
-        <strong>反応時間:</strong> ${rt} ms
-        `;
-
-    results.push({
-
-        trial: trial,
-
-        deck: deckName,
-
-        outcome: outcome,
-
-        balance: balance,
-
-        rt: rt,
-
-        timestamp: Date.now()
-
-    });
-
-    trialStart = performance.now();
-
-    if(trial === MAX_TRIALS){
-        finishTask();
-    }
+  trialStart =
+    performance.now();
 }
 
-function finishTask(){
+function sampleOutcome(deck){
 
-    document
-        .querySelectorAll(".deck")
-        .forEach(btn => btn.disabled = true);
+  const r = Math.random();
 
-    const advantageous =
-        selectionCounts.C +
-        selectionCounts.D;
+  let cum = 0;
 
-    const disadvantageous =
-        selectionCounts.A +
-        selectionCounts.B;
+  for(const item of decks[deck].outcomes){
+
+    cum += item.p;
+
+    if(r <= cum){
+
+      return item.value;
+
+    }
+
+  }
+
+  return decks[deck]
+    .outcomes[
+      decks[deck].outcomes.length-1
+    ]
+    .value;
+}
+
+function chooseDeck(deck){
+
+  if(trial >= MAX_TRIALS){
+
+    return;
+
+  }
+
+  const rt = Math.round(
+    performance.now()
+    - trialStart
+  );
+
+  const outcome =
+    sampleOutcome(deck);
+
+  balance += outcome;
+
+  trial++;
+
+  counts[deck]++;
+
+  document
+    .getElementById("balance")
+    .textContent =
+      `所持金: ${balance}`;
+
+  document
+    .getElementById("trial")
+    .textContent =
+      `試行: ${trial} / ${MAX_TRIALS}`;
+
+  document
+    .getElementById("feedback")
+    .innerHTML =
+      `
+      <p>
+      デッキ: ${deck}
+      </p>
+
+      <p>
+      結果:
+      ${outcome > 0 ? "+" : ""}
+      ${outcome}
+      </p>
+
+      <p>
+      反応時間:
+      ${rt} ms
+      </p>
+      `;
+
+  results.push({
+
+    trial,
+
+    deck,
+
+    outcome,
+
+    balance,
+
+    rt,
+
+    timestamp:
+      new Date().toISOString()
+
+  });
+
+  trialStart =
+    performance.now();
+
+  if(trial >= MAX_TRIALS){
+
+    finishTask();
+
+  }
+}
+
+async function finishTask(){
+
+  document
+    .querySelectorAll(".deck")
+    .forEach(
+      b => b.disabled = true
+    );
+
+  document
+    .getElementById("feedback")
+    .innerHTML =
+      "<h2>送信中...</h2>";
+
+  try{
+
+    await fetch(
+      GAS_URL,
+      {
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+          "application/json"
+        },
+
+        body:JSON.stringify({
+
+          participantId,
+
+          data:results
+
+        })
+
+      }
+    );
 
     const netScore =
-        advantageous -
-        disadvantageous;
+      (counts.C + counts.D)
+      -
+      (counts.A + counts.B);
 
-    document.getElementById("summary").innerHTML =
-        `
-        <hr>
+    document
+      .getElementById(
+        "feedback"
+      )
+      .innerHTML =
+      `
+      <h2>
+      実験終了
+      </h2>
 
-        <h2>課題終了</h2>
+      <p>
+      最終所持金:
+      ${balance}
+      </p>
 
-        <p>最終所持金: ${balance}</p>
+      <p>
+      Net Score:
+      ${netScore}
+      </p>
 
-        <p>
-        A: ${selectionCounts.A} /
-        B: ${selectionCounts.B} /
-        C: ${selectionCounts.C} /
-        D: ${selectionCounts.D}
-        </p>
+      <p>
+      データ送信完了
+      </p>
+      `;
 
-        <p>
-        Net Score (C+D)-(A+B):
-        <strong>${netScore}</strong>
-        </p>
+  }catch(err){
 
-        <button onclick="downloadCSV()">
-            CSVダウンロード
-        </button>
-        `;
-}
+    document
+      .getElementById(
+        "feedback"
+      )
+      .innerHTML =
+      `
+      <h2>
+      実験終了
+      </h2>
 
-function downloadCSV(){
+      <p>
+      保存エラー
+      </p>
 
-    let csv =
-        "trial,deck,outcome,balance,rt,timestamp\n";
-
-    results.forEach(r=>{
-
-        csv +=
-            [
-                r.trial,
-                r.deck,
-                r.outcome,
-                r.balance,
-                r.rt,
-                r.timestamp
-            ].join(",") + "\n";
-
-    });
-
-    const blob =
-        new Blob(
-            [csv],
-            {type:"text/csv"}
-        );
-
-    const url =
-        URL.createObjectURL(blob);
-
-    const a =
-        document.createElement("a");
-
-    a.href = url;
-    a.download = "igt_data.csv";
-
-    document.body.appendChild(a);
-
-    a.click();
-
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(url);
+      <pre>
+${err}
+      </pre>
+      `;
+  }
 }
 
 </script>
