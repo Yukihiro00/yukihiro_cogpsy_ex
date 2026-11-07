@@ -11,12 +11,20 @@
         max-width: 1000px;
         margin: auto;
         padding: 20px;
+        overflow-x: hidden;
       }
 
-      svg {
-        border: 1px solid #ccc;
-        background: #fff;
-      }
+    svg {
+      border: 1px solid #ccc;
+      background: #fff;
+
+      max-width: 100%;
+      height: auto;
+
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+  }
 
       #responseArea {
         display: flex;
@@ -46,7 +54,12 @@
     </div>
     <div id="experiment" style="display: none">
       <div id="trialInfo"></div>
-      <svg id="stimulus" width="800" height="350"></svg>
+     <svg
+    id="stimulus"
+    viewBox="0 0 800 350"
+    width="100%"
+    height="auto">
+</svg>
       <div id="responseArea">
         <button id="topBtn">↑ 上が長い</button
         ><button id="bottomBtn">↓ 下が長い</button>
