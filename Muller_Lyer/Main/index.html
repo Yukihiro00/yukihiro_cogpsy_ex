@@ -187,48 +187,60 @@
         a.download = `MullerLyer_${participantId}.csv`;
         a.click();
       }
-      async function sendToGAS() {
-        if (GAS_URL ==="PASTE_YOUR_GAS_URL_HERE"){
-      return false;
-      }
-        try {
-          await fetch(GAS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            const payload = {
+async function sendToGAS(){
 
-    participantId,
+    if(
+        GAS_URL ===
+        "PASTE_YOUR_GAS_URL_HERE"
+    ){
+        return false;
+    }
 
-    data: results
+    const payload = {
 
-};
+        participantId,
 
-await fetch(
+        data: results
 
-    GAS_URL,
+    };
 
-    {
+    try{
 
-        method: "POST",
+        const response =
 
-        body:
-            new URLSearchParams({
+            await fetch(
 
-                data:
-                    JSON.stringify(
-                        payload
-                    )
+                GAS_URL,
 
-            })
+                {
+
+                    method: "POST",
+
+                    body:
+                        new URLSearchParams({
+
+                            data:
+                                JSON.stringify(
+                                    payload
+                                )
+
+                        })
+
+                }
+
+            );
+
+        return response.ok;
+
+    }catch(e){
+
+        console.error(e);
+
+        return false;
 
     }
 
-);
-          return true;
-        } catch (e) {
-          return false;
-        }
-      }
+}
       async function finishTask() {
         setBtns(false);
         const ok = await sendToGAS();
