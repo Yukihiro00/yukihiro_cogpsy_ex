@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>
+Müller-Lyer 練習試行
+</title>
+
+<style>
+
+body{
+
+    font-family:sans-serif;
+
+    text-align:center;
+
+    max-width:1000px;
+
+    margin:auto;
+
+    padding:20px;
+
+}
+
+svg{
+
+    border:1px solid #cccccc;
+
+    background:white;
+
+}
+
+#trialInfo{
+
+    margin:15px;
+
+    font-size:1.2rem;
+
+}
+
+#responseArea{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin-top:20px;
+
+}
+
+button{
+
+    font-size:1.1rem;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+
+    width:220px;
+
+}
+
+button:disabled{
+
+    opacity:0.5;
+
+}
+
+#feedback{
+
+    margin-top:20px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>
+練習試行
+</h1>
+
+<p>
+
+上と下の図形を見て、
+
+長く見える方を選んでください。
+
+</p>
+
+<div id="startScreen">
+
+<button id="startBtn">
+練習開始
+</button>
+
+</div>
+
+<div id="experiment"
+     style="display:none;">
+
+<div id="trialInfo"></div>
+
+<svg id="stimulus"
+     width="800"
+     height="350">
+</svg>
+
+<div id="responseArea">
+
+<button id="topBtn">
+
+上が長い
+
+</button>
+
+<button id="bottomBtn">
+
+下が長い
+
+</button>
+
+</div>
+
+<div id="feedback"></div>
+
+</div>
+
+<script>
+
+//====================================================
+// 設定
+//====================================================
+
+const STANDARD_LENGTH = 150;
+
+const BLANK_DURATION = 250;
+
+const FIXATION_DURATION = 500;
+
+// 練習用
+
+const PRACTICE_TRIALS = [
+
+    0.90,
+
+    1.10,
+
+    0.95,
+
+    1.05,
+
+    1.00,
+
+    0.90,
+
+    1.10,
+
+    0.95,
+
+    1.05,
+
+    1.00
+
+];
+
+//====================================================
+
+let currentTrial = 0;
+
+let trialStart = null;
+
+//====================================================
+
+const startBtn =
+    document.getElementById(
+        "startBtn"
+    );
+
+const topBtn =
+    document.getElementById(
+        "topBtn"
+    );
+
+const bottomBtn =
+    document.getElementById(
+        "bottomBtn"
+    );
+
+const stimulus =
+    document.getElementById(
+        "stimulus"
+    );
+
+const trialInfo =
+    document.getElementById(
+        "trialInfo"
+    );
+
+//====================================================
+
+startBtn.addEventListener(
+    "click",
+    startPractice
+);
+
+topBtn.addEventListener(
+    "click",
+    function(){
+
+        recordResponse();
+
+    }
+);
+
+bottomBtn.addEventListener(
+    "click",
+    function(){
+
+        recordResponse();
+
+    }
+);
+
+//====================================================
+
+document.addEventListener(
+    "keydown",
+    function(event){
+
+        if(topBtn.disabled){
+
+            return;
+
+        }
+
+        if(
+            event.key ===
+            "ArrowUp"
+        ){
+
+            recordResponse();
+
+        }
+
+        if(
+            event.key ===
+            "ArrowDown"
+        ){
+
+            recordResponse();
+
+        }
+
+    }
+);
+
+//====================================================
+
+function setButtonsEnabled(
+    enabled
+){
+
+    topBtn.disabled =
+        !enabled;
+
+    bottomBtn.disabled =
+        !enabled;
+
+}
+
+//====================================================
+
+function drawLine(
+    centerX,
+    y,
+    length
+){
+
+    const x1 =
+        centerX -
+        length / 2;
+
+    const x2 =
+        centerX +
+        length / 2;
+
+    return `
+
+    <line
+        x1="${x1}"
+        y1="${y}"
+        x2="${x2}"
+        y2="${y}"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    `;
+
+}
+
+//====================================================
+
+function drawMullerLyer(
+    centerX,
+    y,
+    shaftLength
+){
+
+    const angle = 90;
+
+    const wingLength =
+        shaftLength * 0.25;
+
+    const x1 =
+        centerX -
+        shaftLength / 2;
+
+    const x2 =
+        centerX +
+        shaftLength / 2;
+
+    const rad =
+        angle *
+        Math.PI /
+        180;
+
+    let html = "";
+
+    html += drawLine(
+        centerX,
+        y,
+        shaftLength
+    );
+
+    html += `
+
+    <line
+        x1="${x1}"
+        y1="${y}"
+        x2="${
+            x1 +
+            wingLength *
+            Math.cos(rad)
+        }"
+        y2="${
+            y -
+            wingLength *
+            Math.sin(rad)
+        }"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    <line
+        x1="${x1}"
+        y1="${y}"
+        x2="${
+            x1 +
+            wingLength *
+            Math.cos(rad)
+        }"
+        y2="${
+            y +
+            wingLength *
+            Math.sin(rad)
+        }"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    <line
+        x1="${x2}"
+        y1="${y}"
+        x2="${
+            x2 -
+            wingLength *
+            Math.cos(rad)
+        }"
+        y2="${
+            y -
+            wingLength *
+            Math.sin(rad)
+        }"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    <line
+        x1="${x2}"
+        y1="${y}"
+        x2="${
+            x2 -
+            wingLength *
+            Math.cos(rad)
+        }"
+        y2="${
+            y +
+            wingLength *
+            Math.sin(rad)
+        }"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    `;
+
+    return html;
+
+}
+
+//====================================================
+
+function showBlank(){
+
+    setButtonsEnabled(
+        false
+    );
+
+    stimulus.innerHTML = "";
+
+    setTimeout(
+
+        showFixation,
+
+        BLANK_DURATION
+
+    );
+
+}
+
+//====================================================
+
+function showFixation(){
+
+    stimulus.innerHTML =
+
+    `
+    <text
+        x="400"
+        y="175"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        font-size="40">
+
+        +
+
+    </text>
+    `;
+
+    setTimeout(
+
+        showTrial,
+
+        FIXATION_DURATION
+
+    );
+
+}
+
+//====================================================
+
+function showTrial(){
+
+    const ratio =
+        PRACTICE_TRIALS[
+            currentTrial
+        ];
+
+    const comparisonLength =
+        STANDARD_LENGTH *
+        ratio;
+
+    let html = "";
+
+    html += drawLine(
+        400,
+        110,
+        STANDARD_LENGTH
+    );
+
+    html += drawMullerLyer(
+        400,
+        240,
+        comparisonLength
+    );
+
+    stimulus.innerHTML =
+        html;
+
+    trialInfo.textContent =
+        "練習試行 "
+        + (currentTrial + 1)
+        + " / "
+        + PRACTICE_TRIALS.length;
+
+    setButtonsEnabled(
+        true
+    );
+
+    trialStart =
+        performance.now();
+
+}
+
+//====================================================
+
+function recordResponse(){
+
+    currentTrial++;
+
+    if(
+        currentTrial >=
+        PRACTICE_TRIALS.length
+    ){
+
+        finishPractice();
+
+        return;
+
+    }
+
+    showBlank();
+
+}
+
+//====================================================
+
+function finishPractice(){
+
+    stimulus.innerHTML = "";
+
+    setButtonsEnabled(
+        false
+    );
+
+    document
+    .getElementById(
+        "feedback"
+    )
+    .innerHTML =
+
+    `
+
+    <h2>
+
+    練習終了
+
+    </h2>
+
+    <p>
+
+    本試行へ進んでください。
+
+    </p>
+
+    <br>
+
+    <a
+        href="https://yukihiro00.github.io/yukihiro_cogpsy_ex/IOWA/"
+        style="
+            display:inline-block;
+            padding:12px 24px;
+            background:#0078d4;
+            color:white;
+            text-decoration:none;
+            border-radius:6px;
+            font-size:18px;
+        "
+    >
+
+    本試行へ進む
+
+    </a>
+
+    `;
+
+}
+//====================================================
+
+function startPractice(){
+
+    document
+    .getElementById(
+        "startScreen"
+    )
+    .style.display =
+    "none";
+
+    document
+    .getElementById(
+        "experiment"
+    )
+    .style.display =
+    "block";
+
+    showFixation();
+
+}
+
+</script>
+
+</body>
+
+</html>
