@@ -26,14 +26,20 @@ body{
 
     padding:20px;
 
+    overflow-x: hidden;
+
 }
 
-svg{
+svg {
+    border: 1px solid #ccc;
+    background: #fff;
 
-    border:1px solid #cccccc;
+    max-width: 100%;
+    height: auto;
 
-    background:white;
-
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #trialInfo{
@@ -113,9 +119,11 @@ button:disabled{
 
 <div id="trialInfo"></div>
 
-<svg id="stimulus"
-     width="800"
-     height="350">
+<svg
+    id="stimulus"
+    viewBox="0 0 800 350"
+    width="100%"
+    height="auto">
 </svg>
 
 <div id="responseArea">
