@@ -195,8 +195,35 @@
           await fetch(GAS_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ participantId, data: results }),
-          });
+            const payload = {
+
+    participantId,
+
+    data: results
+
+};
+
+await fetch(
+
+    GAS_URL,
+
+    {
+
+        method: "POST",
+
+        body:
+            new URLSearchParams({
+
+                data:
+                    JSON.stringify(
+                        payload
+                    )
+
+            })
+
+    }
+
+);
           return true;
         } catch (e) {
           return false;
