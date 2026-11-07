@@ -188,7 +188,9 @@
         a.click();
       }
       async function sendToGAS() {
-        if (GAS_URL === "https://script.google.com/macros/s/AKfycbxrfomWuRrc9zMfmHTOd_4uOV-GXLAduR1wCLubpwIrGb4nKYUPDPOBuTJUfafZQPyt9A/exec") return false;
+        if (GAS_URL ==="PASTE_YOUR_GAS_URL_HERE"){
+      return false;
+      }
         try {
           await fetch(GAS_URL, {
             method: "POST",
