@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iowa Gambling Task (IGT) フィードバック</title>
+
+<style>
+body{
+    font-family: "Yu Gothic", "Hiragino Sans", sans-serif;
+    line-height: 1.9;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #222;
+    background: #fff;
+}
+
+h1{
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 10px;
+}
+
+h2{
+    margin-top: 40px;
+    padding-left: 12px;
+    border-left: 5px solid #2c3e50;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+th, td{
+    border: 1px solid #999;
+    padding: 10px;
+    text-align: center;
+}
+
+th{
+    background: #f2f2f2;
+}
+
+.figure{
+    text-align: center;
+    margin: 25px 0;
+    padding: 20px;
+    background: #fafafa;
+    border: 1px solid #ddd;
+}
+
+.note{
+    background: #f8f9fa;
+    padding: 15px;
+    border-left: 4px solid #2c3e50;
+}
+
+strong{
+    color: #000;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Iowa Gambling Task (IGT) フィードバック</h1>
+
+<h2>課題の目的</h2>
+
+<p>
+この課題では、4つのデッキ（A、B、C、D）から100回カードを選択しました。
+目的は、限られた経験から長期的に有利な選択肢を見つけられるかを調べることです。
+</p>
+
+<p>
+参加者は各デッキの仕組みを事前には知らず、
+実際の勝ち負けを経験しながら学習していきます。
+</p>
+
+<h2>各デッキの構造</h2>
+
+<p>
+今回の課題では、各デッキを以下の確率分布として整理できます。
+</p>
+
+<table>
+<tr>
+<th>デッキ</th>
+<th>結果</th>
+</tr>
+<tr>
+<td>A</td>
+<td>50%で +100、50%で -150</td>
+</tr>
+<tr>
+<td>B</td>
+<td>90%で +100、10%で -1125</td>
+</tr>
+<tr>
+<td>C</td>
+<td>50%で +50、50%で 0</td>
+</tr>
+<tr>
+<td>D</td>
+<td>90%で +50、10%で -225</td>
+</tr>
+</table>
+
+<h2>期待値とリスク</h2>
+
+<p>
+各デッキの特徴は、
+平均的にどれくらい得をするかを示す「期待値」と、
+結果のばらつきを示す「標準偏差」で整理できます。
+</p>
+
+<table>
+<tr>
+<th>デッキ</th>
+<th>期待値(EV)</th>
+<th>標準偏差(SD)</th>
+</tr>
+<tr>
+<td>A</td>
+<td>-25.0</td>
+<td>125.0</td>
+</tr>
+<tr>
+<td>B</td>
+<td>-22.5</td>
+<td>367.5</td>
+</tr>
+<tr>
+<td>C</td>
+<td>+25.0</td>
+<td>25.0</td>
+</tr>
+<tr>
+<td>D</td>
+<td>+22.5</td>
+<td>77.9</td>
+</tr>
+</table>
+
+<h2>期待値による有利・不利</h2>
+
+<p>
+期待値を見ると、CとDは長期的に利益が出る有利なデッキで、
+AとBは損失が出る不利なデッキです。
+CとD、AとBは、それぞれ近い期待値を持っています。
+</p>
+
+<h2>期待値と体験の違い</h2>
+
+<p>
+期待値だけを基準にすれば、
+Bは選ぶべきではないデッキです。
+しかし、実際にカードを引いたときの印象は、
+期待値から分かる有利・不利とは異なります。
+</p>
+
+<h2>デッキBの成功体験</h2>
+
+<p>
+Deck B では、90%の確率で +100 が得られます。
+大部分の試行で勝つ経験が続くため、
+「このデッキは良いデッキだ」
+と感じやすくなります。
+</p>
+
+<h2>100試行後の平均利益</h2>
+
+<p>
+100試行すべてで同じデッキを引いた場合、
+理論上の平均最終利益は以下のとおりです。
+</p>
+
+<table>
+<tr>
+<th>デッキ</th>
+<th>平均最終利益</th>
+</tr>
+<tr>
+<td>A</td>
+<td>-2500</td>
+</tr>
+<tr>
+<td>B</td>
+<td>-2250</td>
+</tr>
+<tr>
+<td>C</td>
+<td>+2500</td>
+</tr>
+<tr>
+<td>D</td>
+<td>+2250</td>
+</tr>
+</table>
+
+<p>
+この平均結果でも、
+CとDでは利益が出る一方、
+AとBでは損失が出ることが分かります。
+</p>
+
+<div class="figure">
+<p><strong>図：利益分布グラフ</strong></p>
+<p><img src="igt_distribution.png"></p>
+</div>
+
+
+
+<h2>デッキBのプラス収支確率</h2>
+
+<p>
+Deck B だけを100回引いた場合でも、
+最終的にプラス収支で終わる確率は約44%あります。
+長期的には不利であっても、
+実際に勝って終わる人はかなり存在するということです。
+</p>
+
+<h2>デッキBとC・Dの比較</h2>
+
+<p>
+Deck B が Deck C より多く稼げる確率は約10%、
+Deck D より多く稼げる確率も約11%にとどまります。
+</p>
+
+<p>
+つまり、
+Deck B で勝って終わることはあっても、
+Deck C や D より多く稼げることは少ないのです。
+「利益が出ること」と
+「他の選択肢より有利であること」は区別する必要があります。
+</p>
+
+<h2>経験に基づく判断の難しさ</h2>
+
+<p>
+研究者は計算によってCとDが有利だと分かっています。
+しかし、参加者は実験中に期待値や標準偏差を計算できず、
+直前の勝ち負けを手がかりに判断します。
+そのため、頻繁に成功する Deck B が魅力的に見えるのです。
+</p>
+
+<h2>課題が捉える意思決定</h2>
+
+<p>
+この課題は、
+単に「正解のデッキを選べるか」を測定するものではありません。
+頻繁な成功、まれな大失敗、長期的な利益、不確実性を、
+どのように評価するかを調べています。
+</p>
+
+<p>
+言い換えると、
+限られた経験から未来をどう予測し、
+意思決定するのかを測る課題です。
+</p>
+
+<h2>まとめ</h2>
+
+<p>
+Deck B は長期的には不利ですが、
+多くの試行で利益が得られ、
+約44%の人が最終的にプラス収支で終わるため、
+魅力的に感じられます。
+</p>
+
+<p>
+ただし、
+Deck B で利益が出ることと、
+他のデッキより有利であることは別です。
+Deck C より多く稼げる確率は約10%、
+Deck D より多く稼げる確率も約11%にとどまります。
+</p>
+
+<div class="note">
+<strong>
+この課題の難しさは、短期的な成功体験と長期的な利益が一致しない点にあります。
+</strong>
+</div>
+
+<p>
+そのため IGT は、
+単なる「運の良さ」ではなく、
+<strong>不確実な状況でどのような判断基準を用いて意思決定するかを測定する課題</strong>
+として広く用いられています。
+</p>
+
+</body>
+</html>
