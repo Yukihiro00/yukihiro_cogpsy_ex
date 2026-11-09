@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Length Serial Dependence Experiment</title>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    text-align:center;
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+svg {
+      border: 1px solid #ccc;
+      background: #fff;
+
+      max-width: 100%;
+      height: auto;
+
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+  }
+
+#responseArea{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+    margin-top:20px;
+}
+
+button{
+    font-size:1.1rem;
+    padding:10px 20px;
+    cursor:pointer;
+}
+
+button:disabled{
+    opacity:0.5;
+}
+
+#feedback{
+    margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>長さ系列依存実験</h1>
+
+<div id="startScreen">
+
+    <p>
+        長く見える方を選択してください
+    </p>
+
+    <p>
+        ↑ 上が長い<br>
+        ↓ 下が長い
+    </p>
+
+    <button id="startBtn">
+        開始
+    </button>
+
+</div>
+
+<div
+    id="experiment"
+    style="display:none;"
+>
+
+    <div id="trialInfo"></div>
+
+     <svg
+    id="stimulus"
+    viewBox="0 0 800 350"
+    width="100%"
+    height="auto">
+
+    <div id="responseArea">
+
+        <button id="topBtn">
+            ↑ 上が長い
+        </button>
+
+        <button id="bottomBtn">
+            ↓ 下が長い
+        </button>
+
+    </div>
+
+    <div id="feedback"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   GAS
+========================= */
+
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbyHpfW4E0gTLGgfdc0u7L214Pq947n3wPIlrGknpesgJu-jChTKQ5RRGfspN7IxgsVE/exec";
+
+/* =========================
+   Experiment
+========================= */
+
+const EXPERIMENT_VERSION =
+"Length_Serial_v1";
+
+const STANDARD_LENGTH =
+150;
+
+const COMPARISON_LENGTHS = [
+    130,
+    140,
+    150,
+    160,
+    170
+];
+
+const CUE_LENGTHS = [
+    0,
+    120,
+    150,
+    180
+];
+
+const REPETITIONS = 20;
+
+/* =========================
+   Timing
+========================= */
+
+const PRE_CUE_FIXATION =
+100;
+
+const CUE_DURATION =
+500;
+
+const BLANK_DURATION =
+100;
+
+const PRE_PROBE_FIXATION =
+250;
+
+/* =========================
+   Break
+========================= */
+
+const BREAK_INTERVAL = 80;
+
+/* =========================
+   Participant
+========================= */
+
+const participantId =
+    crypto.randomUUID();
+
+/* =========================
+   Runtime Variables
+========================= */
+
+let currentTrial = 0;
+
+let trialStart = null;
+
+let awaitingResponse =
+    false;
+
+const results = [];
+
+const trials = [];
+
+/* =========================
+   DOM
+========================= */
+
+const stimulus =
+    document.getElementById(
+        "stimulus"
+    );
+
+const trialInfo =
+    document.getElementById(
+        "trialInfo"
+    );
+
+const startBtn =
+    document.getElementById(
+        "startBtn"
+    );
+
+const topBtn =
+    document.getElementById(
+        "topBtn"
+    );
+
+const bottomBtn =
+    document.getElementById(
+        "bottomBtn"
+    );
+
+const feedback =
+    document.getElementById(
+        "feedback"
+    );
+
+/* =========================
+   Utility
+========================= */
+
+function setBtns(enable){
+
+    topBtn.disabled =
+        !enable;
+
+    bottomBtn.disabled =
+        !enable;
+
+}
+
+function shuffle(array){
+
+    for(
+        let i=array.length-1;
+        i>0;
+        i--
+    ){
+
+        const j =
+            Math.floor(
+                Math.random()
+                * (i+1)
+            );
+
+        [
+            array[i],
+            array[j]
+        ] =
+        [
+            array[j],
+            array[i]
+        ];
+
+    }
+
+    return array;
+
+}
+
+function drawLine(
+    cx,
+    y,
+    length
+){
+
+    const half =
+        length / 2;
+
+    return `
+
+    <line
+        x1="${cx-half}"
+        y1="${y}"
+        x2="${cx+half}"
+        y2="${y}"
+        stroke="black"
+        stroke-width="4"
+    />
+
+    `;
+
+}
+
+/* =========================
+   Trial Generation
+========================= */
+
+function createTrials(){
+
+    CUE_LENGTHS.forEach(cueLength => {
+
+        COMPARISON_LENGTHS.forEach(
+            comparisonLength => {
+
+                for(
+                    let i = 0;
+                    i < REPETITIONS;
+                    i++
+                ){
+
+                    trials.push({
+
+                        cueLength,
+
+                        comparisonLength,
+
+                        standardOnTop:
+                            Math.random()
+                            < 0.5
+
+                    });
+
+                }
+
+            }
+        );
+
+    });
+
+    shuffle(trials);
+
+}
+
+createTrials();
+
+/* =========================
+   Display Pipeline
+========================= */
+
+function showPreCueFixation(){
+
+    setBtns(false);
+
+    awaitingResponse =
+        false;
+
+    stimulus.innerHTML = `
+        <text
+            x="400"
+            y="175"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="40">
+            +
+        </text>
+    `;
+
+    setTimeout(
+        showCue,
+        PRE_CUE_FIXATION
+    );
+
+}
+
+function showCue(){
+
+    const t =
+        trials[currentTrial];
+
+    stimulus.innerHTML = "";
+
+    if(
+        t.cueLength > 0
+    ){
+
+        const cueY =
+
+            t.standardOnTop
+
+            ? 110
+
+            : 240;
+
+        stimulus.innerHTML =
+
+            drawLine(
+
+                400,
+
+                cueY,
+
+                t.cueLength
+
+            );
+
+    }
+
+    setTimeout(
+
+        showBlank,
+
+        CUE_DURATION
+
+    );
+
+}
+
+function showBlank(){
+
+    stimulus.innerHTML = "";
+
+    setTimeout(
+
+        showPreProbeFixation,
+
+        BLANK_DURATION
+
+    );
+
+}
+
+function showPreProbeFixation(){
+
+    stimulus.innerHTML = `
+        <text
+            x="400"
+            y="175"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="40">
+            +
+        </text>
+    `;
+
+    setTimeout(
+
+        showProbe,
+
+        PRE_PROBE_FIXATION
+
+    );
+
+}
+
+/* =========================
+   Probe Display
+========================= */
+
+function showProbe(){
+
+    const t =
+        trials[currentTrial];
+
+    let html = "";
+
+    if(
+        t.standardOnTop
+    ){
+
+        html += drawLine(
+
+            400,
+
+            110,
+
+            STANDARD_LENGTH
+
+        );
+
+        html += drawLine(
+
+            400,
+
+            240,
+
+            t.comparisonLength
+
+        );
+
+    }
+
+    else{
+
+        html += drawLine(
+
+            400,
+
+            110,
+
+            t.comparisonLength
+
+        );
+
+        html += drawLine(
+
+            400,
+
+            240,
+
+            STANDARD_LENGTH
+
+        );
+
+    }
+
+    stimulus.innerHTML =
+        html;
+
+    trialInfo.textContent =
+
+        `試行 ${currentTrial + 1} / ${trials.length}`;
+
+    setBtns(true);
+
+    awaitingResponse =
+        true;
+
+    trialStart =
+        performance.now();
+
+}
+
+/* =========================
+   Start Experiment
+========================= */
+
+startBtn.onclick = () => {
+
+    startScreen.style.display =
+        "none";
+
+    experiment.style.display =
+        "block";
+
+    showPreCueFixation();
+
+};
+
+/* =========================
+   Response Recording
+========================= */
+
+function recordResponse(choice){
+
+    if(!awaitingResponse){
+        return;
+    }
+
+    awaitingResponse =
+        false;
+
+    setBtns(false);
+
+    const t =
+        trials[currentTrial];
+
+    const rt =
+        Math.round(
+            performance.now()
+            - trialStart
+        );
+
+    results.push({
+
+        participantId,
+
+        experimentVersion:
+            EXPERIMENT_VERSION,
+
+        trial:
+            currentTrial + 1,
+
+        cueLength:
+            t.cueLength,
+
+        previousCueLength:
+
+            currentTrial > 0
+
+            ?
+
+            trials[
+                currentTrial - 1
+            ].cueLength
+
+            :
+
+            null,
+
+        standardLength:
+            STANDARD_LENGTH,
+
+        comparisonLength:
+            t.comparisonLength,
+
+        standardPosition:
+
+            t.standardOnTop
+
+            ?
+
+            "top"
+
+            :
+
+            "bottom",
+
+        choice,
+
+        rt,
+
+        preCueFixation:
+            PRE_CUE_FIXATION,
+
+        cueDuration:
+            CUE_DURATION,
+
+        blankDuration:
+            BLANK_DURATION,
+
+        preProbeFixation:
+            PRE_PROBE_FIXATION,
+
+        timestamp:
+            new Date()
+            .toISOString()
+
+    });
+
+    currentTrial++;
+
+    if(
+        currentTrial
+        >=
+        trials.length
+        ){
+
+    finishTask();
+
+    return;
+
+    }
+
+/* ---------- break ---------- */
+
+if(
+
+    currentTrial > 0
+
+    &&
+
+    currentTrial % BREAK_INTERVAL === 0
+
+){
+
+    showBreakScreen();
+
+    return;
+
+}
+
+showPreCueFixation();
+
+
+}
+
+/* =========================
+   Button Responses
+========================= */
+
+topBtn.onclick = () => {
+
+    recordResponse(
+        "top"
+    );
+
+};
+
+bottomBtn.onclick = () => {
+
+    recordResponse(
+        "bottom"
+    );
+
+};
+
+/* =========================
+   Keyboard Responses
+========================= */
+
+document.addEventListener(
+    "keydown",
+    e => {
+
+        if(!awaitingResponse){
+            return;
+        }
+
+        if(
+            e.key === "ArrowUp" ||
+            e.key === "ArrowDown"
+        ){
+            e.preventDefault();
+        }
+
+        if(e.key === "ArrowUp"){
+            recordResponse("top");
+        }
+
+        if(e.key === "ArrowDown"){
+            recordResponse("bottom");
+        }
+
+    }
+);
+
+/* =========================
+   Safety Check
+========================= */
+
+setBtns(false);
+
+/* =========================
+   Break Screen
+========================= */
+
+function showBreakScreen(){
+
+    stimulus.innerHTML = "";
+
+    trialInfo.textContent = "";
+
+    feedback.innerHTML = `
+
+        <h2>休憩</h2>
+
+        <p>
+
+            ${currentTrial}
+            / ${trials.length}
+
+            試行完了
+
+        </p>
+
+        <p>
+
+            少し休憩してください
+
+        </p>
+
+        <button id="continueBtn">
+
+            続行
+
+        </button>
+
+    `;
+
+    document
+        .getElementById(
+            "continueBtn"
+        )
+        .onclick = () => {
+
+            feedback.innerHTML = "";
+
+            showPreCueFixation();
+
+        };
+
+}
+
+/* =========================
+   CSV Download
+========================= */
+
+function downloadCSV(){
+
+    if(results.length === 0){
+        return;
+    }
+
+    const headers =
+        Object.keys(
+            results[0]
+        );
+
+    let csv =
+
+        headers.join(",")
+
+        + "\n";
+
+    results.forEach(r => {
+
+        csv +=
+
+            headers.map(
+
+                h => r[h]
+
+            ).join(",")
+
+            + "\n";
+
+    });
+
+    const blob =
+
+        new Blob(
+
+            [
+
+                "\uFEFF" + csv
+
+            ],
+
+            {
+
+                type:
+                "text/csv;charset=utf-8;"
+
+            }
+
+        );
+
+    const a =
+        document.createElement(
+            "a"
+        );
+
+    a.href =
+        URL.createObjectURL(
+            blob
+        );
+
+    a.download =
+        `LengthSerial_${participantId}.csv`;
+
+    a.click();
+
+}
+
+/* =========================
+   GAS Upload
+========================= */
+
+async function sendToGAS(){
+
+    if(
+
+        GAS_URL ===
+        "PASTE_YOUR_GAS_URL_HERE"
+
+    ){
+
+        return false;
+
+    }
+
+    const payload = {
+
+        participantId,
+
+        data: results
+
+    };
+
+    try{
+
+        const response =
+
+            await fetch(
+
+                GAS_URL,
+
+                {
+
+                    method:"POST",
+
+                    body:
+
+                        new URLSearchParams({
+
+                            data:
+
+                                JSON.stringify(
+                                    payload
+                                )
+
+                        })
+
+                }
+
+            );
+
+        return response.ok;
+
+    }
+
+    catch(error){
+
+        console.error(
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+/* =========================
+   Finish
+========================= */
+
+async function finishTask(){
+
+    setBtns(false);
+
+    awaitingResponse =
+        false;
+
+    const gasSuccess =
+        await sendToGAS();
+
+    feedback.innerHTML = `
+
+        <h2>
+
+            実験終了
+
+        </h2>
+
+        <p>
+
+            ご協力ありがとうございました
+
+        </p>
+
+        <p>
+
+            参加者ID<br>
+
+            <strong>
+
+                ${participantId}
+
+            </strong>
+
+        </p>
+
+        <p>
+
+            総試行数:
+            ${results.length}
+
+        </p>
+
+        <p>
+
+            GAS送信:
+
+            ${
+                gasSuccess
+
+                ?
+
+                "成功"
+
+                :
+
+                "未設定 / 失敗"
+
+            }
+
+        </p>
+
+        <button
+            id="downloadBtn">
+
+            CSVダウンロード
+
+        </button>
+
+    `;
+
+    document
+        .getElementById(
+            "downloadBtn"
+        )
+        .addEventListener(
+
+            "click",
+
+            downloadCSV
+
+        );
+
+}
+
+/* =========================
+   End Script
+========================= */
+
+</script>
+
+</body>
+</html>
